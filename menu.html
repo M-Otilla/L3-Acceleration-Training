@@ -44,6 +44,7 @@
       <div class="container menu-content">
         <nav class="category-nav" aria-label="Menu categories">
           <ul>
+            <li><a href="#favorites"><span aria-hidden="true">&hearts;</span> Favourites</a></li>
             <li><a href="#pasta"><span aria-hidden="true">01</span> Pasta</a></li>
             <li><a href="#pizza"><span aria-hidden="true">02</span> Pizza</a></li>
             <li><a href="#antipasti"><span aria-hidden="true">03</span> Antipasti &amp; Salads</a></li>
@@ -52,12 +53,14 @@
         </nav>
         <div class="menu-filters" role="group" aria-label="Filter menu by category" hidden>
           <button type="button" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-filter="favorites" aria-pressed="false">Favourites</button>
           <button type="button" data-filter="pasta" aria-pressed="false">Pasta</button>
           <button type="button" data-filter="pizza" aria-pressed="false">Pizza</button>
           <button type="button" data-filter="antipasti" aria-pressed="false">Antipasti &amp; Salads</button>
           <button type="button" data-filter="desserts" aria-pressed="false">Desserts</button>
         </div>
         <p class="filter-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+        <p id="favorites-status" class="favorites-status" role="status" aria-live="polite" aria-atomic="true" hidden>Mark your favorite dishes to remember them in this browser.</p>
         <p class="preview-note"><strong>A taste of what's to come.</strong> This is a sample menu. All dishes, prices in PHP, and badges are placeholders pending confirmation.</p>
 
         <section id="pasta" class="menu-category" aria-labelledby="pasta-heading">
@@ -67,21 +70,21 @@
             <span class="category-aside" aria-hidden="true">La pasta</span>
           </div>
           <ul class="menu-grid">
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="spaghetti-carbonara">
               <div class="item-heading"><h3>Spaghetti Carbonara</h3><span class="price">PHP 420.00</span></div>
               <p>Spaghetti coated in silky egg and Pecorino, with crisp guanciale and a generous crack of black pepper.</p>
               <span class="badge badge-special">Chef's Special</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="penne-arrabbiata">
               <div class="item-heading"><h3>Penne Arrabbiata</h3><span class="price">PHP 350.00</span></div>
               <p>Penne tossed in a lively tomato sauce with garlic, fiery red chili, and fresh parsley.</p>
               <span class="badge">Vegetarian</span><span class="badge badge-spicy">Spicy</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="fettuccine-alfredo">
               <div class="item-heading"><h3>Fettuccine Alfredo</h3><span class="price">PHP 390.00</span></div>
               <p>Long ribbons of fettuccine folded through a rich butter and Parmesan sauce with a delicate peppery finish.</p>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="lasagna">
               <div class="item-heading"><h3>Lasagna</h3><span class="price">PHP 460.00</span></div>
               <p>Layers of pasta, slow-simmered beef rag&ugrave;, and creamy b&eacute;chamel baked to a golden, bubbling top.</p>
               <span class="badge badge-special">Chef's Special</span>
@@ -96,21 +99,21 @@
             <span class="category-aside" aria-hidden="true">Dal forno</span>
           </div>
           <ul class="menu-grid">
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="margherita">
               <div class="item-heading"><h3>Margherita</h3><span class="price">PHP 390.00</span></div>
               <p>Sweet tomato, milky mozzarella, and fragrant basil meet a lightly charred, wood-fired crust.</p>
               <span class="badge">Vegetarian</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="quattro-formaggi">
               <div class="item-heading"><h3>Quattro Formaggi</h3><span class="price">PHP 490.00</span></div>
               <p>Mozzarella, Gorgonzola, fontina, and Parmesan melt into a bold, creamy four-cheese medley.</p>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="prosciutto-e-funghi">
               <div class="item-heading"><h3>Prosciutto e Funghi</h3><span class="price">PHP 520.00</span></div>
               <p>Savory prosciutto and earthy mushrooms sit over tomato and mozzarella, finished with olive oil.</p>
               <span class="badge badge-special">Chef's Special</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="diavola">
               <div class="item-heading"><h3>Diavola</h3><span class="price">PHP 480.00</span></div>
               <p>Spicy salami, melted mozzarella, and red chili bring a warming kick to a bright tomato base.</p>
               <span class="badge badge-spicy">Spicy</span>
@@ -125,21 +128,21 @@
             <span class="category-aside" aria-hidden="true">Per iniziare</span>
           </div>
           <ul class="menu-grid">
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="bruschetta">
               <div class="item-heading"><h3>Bruschetta</h3><span class="price">PHP 220.00</span></div>
               <p>Garlic-rubbed toast piled with ripe tomatoes, fresh basil, and a bright drizzle of extra-virgin olive oil.</p>
               <span class="badge">Vegetarian</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="caprese-salad">
               <div class="item-heading"><h3>Caprese Salad</h3><span class="price">PHP 290.00</span></div>
               <p>Juicy tomatoes and soft mozzarella layered with basil, olive oil, and a sweet balsamic finish.</p>
               <span class="badge">Vegetarian</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="arancini">
               <div class="item-heading"><h3>Arancini</h3><span class="price">PHP 280.00</span></div>
               <p>Crisp golden risotto balls reveal a melting mozzarella center, served with a tangy tomato dip.</p>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="insalata-mista">
               <div class="item-heading"><h3>Insalata Mista</h3><span class="price">PHP 240.00</span></div>
               <p>A crisp mix of leafy greens, cucumber, and cherry tomatoes dressed with a zesty lemon vinaigrette.</p>
               <span class="badge">Vegetarian</span>
@@ -154,20 +157,20 @@
             <span class="category-aside" aria-hidden="true">La dolce vita</span>
           </div>
           <ul class="menu-grid">
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="tiramisu">
               <div class="item-heading"><h3>Tiramisu</h3><span class="price">PHP 250.00</span></div>
               <p>Espresso-soaked ladyfingers and airy mascarpone meet a bittersweet dusting of cocoa.</p>
               <span class="badge badge-special">Chef's Special</span>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="panna-cotta">
               <div class="item-heading"><h3>Panna Cotta</h3><span class="price">PHP 230.00</span></div>
               <p>Silky vanilla cream with a delicate wobble, balanced by a tart mixed-berry compote.</p>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="cannoli">
               <div class="item-heading"><h3>Cannoli</h3><span class="price">PHP 260.00</span></div>
               <p>Crisp pastry shells filled with sweet ricotta, flecks of dark chocolate, and fragrant orange zest.</p>
             </li>
-            <li class="menu-card">
+            <li class="menu-card" data-dish-id="gelato">
               <div class="item-heading"><h3>Gelato</h3><span class="price">PHP 180.00</span></div>
               <p>Two creamy scoops in your choice of chocolate, vanilla, or pistachio for a cool, velvety finish.</p>
             </li>

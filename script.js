@@ -57,6 +57,8 @@ if (header && menuToggle && headerPanel) {
 const filters = document.querySelector(".menu-filters");
 const filterStatus = document.querySelector(".filter-status");
 const categories = [...document.querySelectorAll(".menu-category")];
+let activeFilter = "all";
+let currentFavorites = new Set();
 
 if (filters && filterStatus && categories.length) {
   const buttons = [...filters.querySelectorAll("[data-filter]")];
@@ -64,17 +66,32 @@ if (filters && filterStatus && categories.length) {
   function filterMenu(category) {
     let count = 0;
     for (const section of categories) {
-      section.hidden = category !== "all" && section.id !== category;
-      if (!section.hidden) count += section.querySelectorAll(".menu-card").length;
+      const sectionCards = [...section.querySelectorAll(".menu-card")];
+      section.hidden = category !== "all" && category !== "favorites" && section.id !== category;
+      for (const card of sectionCards) {
+        card.hidden = category === "favorites" && !currentFavorites.has(card.dataset.dishId);
+      }
+      if (!section.hidden) {
+        const visibleCards = sectionCards.filter((card) => !card.hidden);
+        if (category === "favorites" && visibleCards.length === 0) section.hidden = true;
+        count += visibleCards.length;
+      }
     }
+    activeFilter = category;
     for (const button of buttons) {
       button.setAttribute("aria-pressed", String(button.dataset.filter === category));
     }
     const label = buttons.find((button) => button.dataset.filter === category).textContent.trim();
-    filterStatus.textContent = `Showing ${count} dishes: ${label === "All" ? "all categories" : label}.`;
+    filterStatus.textContent = category === "favorites"
+      ? `Showing ${count} favourited dishes.`
+      : `Showing ${count} dishes: ${label === "All" ? "all categories" : label}.`;
   }
 
   function filterFromHash() {
+    if (window.location.hash === "#favorites") {
+      filterMenu("favorites");
+      return;
+    }
     const target = document.getElementById(window.location.hash.slice(1));
     const category = target?.closest(".menu-category");
     filterMenu(category ? category.id : "all");
@@ -90,7 +107,6 @@ if (filters && filterStatus && categories.length) {
   window.addEventListener("hashchange", filterFromHash);
 
   // Reveal controls only when their handlers are ready; retain native links without JS.
-  document.querySelector(".category-nav").hidden = true;
   filters.hidden = false;
   filterStatus.hidden = false;
   filterFromHash();
@@ -137,4 +153,77 @@ if (newsletterForm && newsletterStatus) {
     newsletterStatus.textContent = "";
   });
   newsletterForm.querySelector("fieldset").disabled = false;
+}
+
+const favoriteCards = [...document.querySelectorAll(".menu-card[data-dish-id]")];
+const favoritesStatus = document.getElementById("favorites-status");
+
+if (favoriteCards.length && favoritesStatus) {
+  const storageKey = "la-tavola-menu-favorites";
+  const buttons = new Map();
+
+  function readFavorites() {
+    const saved = window.localStorage.getItem(storageKey);
+    const ids = saved === null ? [] : JSON.parse(saved);
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string" && id.length > 0)) {
+      throw new Error("Invalid favorites storage");
+    }
+    return new Set(ids);
+  }
+
+  function renderFavorites(favorites) {
+    currentFavorites = favorites;
+    for (const [id, { button, name }] of buttons) {
+      const selected = favorites.has(id);
+      button.setAttribute("aria-pressed", String(selected));
+      button.setAttribute("aria-label", selected ? `Remove ${name} from favorites` : `Add ${name} to favorites`);
+      button.textContent = selected ? "Favorited" : "Favorite";
+    }
+    if (activeFilter === "favorites") filterMenu("favorites");
+  }
+
+  for (const card of favoriteCards) {
+    const id = card.dataset.dishId;
+    const name = card.querySelector("h3").textContent.trim();
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "favorite-button";
+    button.textContent = "Favorite";
+    button.setAttribute("aria-label", `Favorite ${name}`);
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", () => {
+      try {
+        // Merge with the latest list, while honoring the action shown by this button.
+        const favorites = readFavorites();
+        const remove = button.getAttribute("aria-pressed") === "true";
+        if (remove) favorites.delete(id);
+        else favorites.add(id);
+        window.localStorage.setItem(storageKey, JSON.stringify([...favorites]));
+        renderFavorites(favorites);
+        favoritesStatus.textContent = `${name} ${remove ? "removed from" : "saved to"} your favorites in this browser.`;
+      } catch {
+        favoritesStatus.textContent = "Favorites could not be saved. Browser storage may be blocked, full, or damaged; see the README for recovery steps.";
+      }
+    });
+    buttons.set(id, { button, name });
+    card.append(button);
+  }
+
+  favoritesStatus.hidden = false;
+  try {
+    renderFavorites(readFavorites());
+  } catch {
+    favoritesStatus.textContent = "Favorites could not be loaded. Browser storage may be blocked or damaged; see the README for recovery steps.";
+  }
+
+  window.addEventListener("storage", (event) => {
+    if (event.key !== storageKey && event.key !== null) return;
+    try {
+      if (event.storageArea !== window.localStorage) return;
+      renderFavorites(readFavorites());
+      favoritesStatus.textContent = "Favorites updated from another tab.";
+    } catch {
+      favoritesStatus.textContent = "Favorites could not be refreshed. Browser storage may be blocked or damaged; see the README for recovery steps.";
+    }
+  });
 }
