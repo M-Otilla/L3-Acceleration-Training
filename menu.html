@@ -42,6 +42,24 @@
       </section>
 
       <div class="container menu-content">
+        <div class="user-login-panel" aria-label="User favourites login">
+          <button id="favorite-user-trigger" class="button button-small" type="button">Favourites profile</button>
+        </div>
+        <div id="favorite-user-modal" class="favorites-login-modal" hidden>
+          <div class="favorites-login-backdrop" data-close-modal="true"></div>
+          <div class="favorites-login-dialog" role="dialog" aria-modal="true" aria-labelledby="favorite-user-modal-title">
+            <button id="favorite-user-close" class="favorites-login-close" type="button" aria-label="Close favourites profile">&times;</button>
+            <p class="eyebrow">Welcome to the table</p>
+            <h2 id="favorite-user-modal-title">Choose a favourites profile</h2>
+            <label for="favorite-user-name">Your name</label>
+            <input id="favorite-user-name" type="text" name="favorite-user-name" placeholder="Enter your name" autocomplete="name">
+            <div class="favorite-user-actions">
+              <button id="favorite-user-login" type="button" class="button">Log in</button>
+              <button id="favorite-user-logout" type="button" class="button button-outline" hidden>Log out</button>
+            </div>
+            <p id="favorite-user-status" aria-live="polite">Signed in as guest. Favorites are stored separately for each user.</p>
+          </div>
+        </div>
         <nav class="category-nav" aria-label="Menu categories">
           <ul>
             <li><a href="#favorites"><span aria-hidden="true">&hearts;</span> Favourites</a></li>

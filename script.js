@@ -157,18 +157,75 @@ if (newsletterForm && newsletterStatus) {
 
 const favoriteCards = [...document.querySelectorAll(".menu-card[data-dish-id]")];
 const favoritesStatus = document.getElementById("favorites-status");
+const favoriteUserTrigger = document.getElementById("favorite-user-trigger");
+const favoriteUserModal = document.getElementById("favorite-user-modal");
+const favoriteUserCloseButton = document.getElementById("favorite-user-close");
+const favoriteUserNameInput = document.getElementById("favorite-user-name");
+const favoriteUserLoginButton = document.getElementById("favorite-user-login");
+const favoriteUserLogoutButton = document.getElementById("favorite-user-logout");
+const favoriteUserStatus = document.getElementById("favorite-user-status");
+const currentUserNameKey = "la-tavola-current-user-name";
+
+function normalizeUserKey(value) {
+  return String(value ?? "guest")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "guest";
+}
+
+function getCurrentUserName() {
+  const saved = window.localStorage.getItem(currentUserNameKey);
+  return saved ? saved.trim() : "guest";
+}
+
+function getFavoritesStorageKeyForUser(userName = getCurrentUserName()) {
+  return `la-tavola-menu-favorites-${normalizeUserKey(userName)}`;
+}
 
 if (favoriteCards.length && favoritesStatus) {
-  const storageKey = "la-tavola-menu-favorites";
   const buttons = new Map();
+  // Configure the favorites expiry window here: 7 days = 1 week.
+  const favoritesExpiryMs = 7 * 24 * 60 * 60 * 1000;
 
-  function readFavorites() {
+  function saveFavorites(favorites, userName = getCurrentUserName()) {
+    const storageKey = getFavoritesStorageKeyForUser(userName);
+    const payload = {
+      ids: [...favorites],
+      expiresAt: Date.now() + favoritesExpiryMs,
+    };
+    window.localStorage.setItem(storageKey, JSON.stringify(payload));
+  }
+
+  function readFavorites(userName = getCurrentUserName()) {
+    const storageKey = getFavoritesStorageKeyForUser(userName);
     const saved = window.localStorage.getItem(storageKey);
-    const ids = saved === null ? [] : JSON.parse(saved);
+    if (saved === null) return { favorites: new Set(), expired: false };
+
+    let parsed;
+    try {
+      parsed = JSON.parse(saved);
+    } catch {
+      throw new Error("Invalid favorites storage");
+    }
+
+    const ids = Array.isArray(parsed) ? parsed : parsed?.ids;
+    const expiresAt = typeof parsed?.expiresAt === "number" ? parsed.expiresAt : null;
+
     if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string" && id.length > 0)) {
       throw new Error("Invalid favorites storage");
     }
-    return new Set(ids);
+
+    if (expiresAt !== null && Date.now() > expiresAt) {
+      window.localStorage.removeItem(storageKey);
+      return { favorites: new Set(), expired: true };
+    }
+
+    if (Array.isArray(parsed) || expiresAt === null) {
+      saveFavorites(new Set(ids), userName);
+    }
+
+    return { favorites: new Set(ids), expired: false };
   }
 
   function renderFavorites(favorites) {
@@ -182,6 +239,52 @@ if (favoriteCards.length && favoritesStatus) {
     if (activeFilter === "favorites") filterMenu("favorites");
   }
 
+  function applyUserLoginState() {
+    const userName = getCurrentUserName();
+    const isGuest = userName === "guest" || userName.trim() === "";
+    if (favoriteUserTrigger) {
+      favoriteUserTrigger.textContent = isGuest ? "Favourites profile" : `Profile: ${userName}`;
+    }
+    if (favoriteUserNameInput) {
+      favoriteUserNameInput.value = isGuest ? "" : userName;
+    }
+    if (favoriteUserStatus) {
+      favoriteUserStatus.textContent = isGuest
+        ? "Signed in as guest. Favorites are stored separately for each user."
+        : `Signed in as ${userName}. Your favourites stay separate from other accounts.`;
+    }
+    if (favoriteUserLogoutButton) {
+      favoriteUserLogoutButton.hidden = isGuest;
+    }
+  }
+
+  function openLoginModal() {
+    if (!favoriteUserModal) return;
+    favoriteUserModal.hidden = false;
+    requestAnimationFrame(() => {
+      favoriteUserNameInput?.focus();
+      favoriteUserNameInput?.select();
+    });
+  }
+
+  function closeLoginModal() {
+    if (!favoriteUserModal) return;
+    favoriteUserModal.hidden = true;
+  }
+
+  function loadFavoritesForCurrentUser() {
+    const userName = getCurrentUserName();
+    const { favorites, expired } = readFavorites(userName);
+    renderFavorites(favorites);
+    if (expired) {
+      favoritesStatus.textContent = `Your favourites for ${userName} expired after one week and have been reset.`;
+      return;
+    }
+    favoritesStatus.textContent = userName === "guest"
+      ? "Favorites are saved under the current guest profile. Log in with a name to keep a separate list."
+      : `Favorites for ${userName} loaded.`;
+  }
+
   for (const card of favoriteCards) {
     const id = card.dataset.dishId;
     const name = card.querySelector("h3").textContent.trim();
@@ -193,14 +296,14 @@ if (favoriteCards.length && favoritesStatus) {
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("click", () => {
       try {
-        // Merge with the latest list, while honoring the action shown by this button.
-        const favorites = readFavorites();
+        const userName = getCurrentUserName();
+        const { favorites } = readFavorites(userName);
         const remove = button.getAttribute("aria-pressed") === "true";
         if (remove) favorites.delete(id);
         else favorites.add(id);
-        window.localStorage.setItem(storageKey, JSON.stringify([...favorites]));
+        saveFavorites(favorites, userName);
         renderFavorites(favorites);
-        favoritesStatus.textContent = `${name} ${remove ? "removed from" : "saved to"} your favorites in this browser.`;
+        favoritesStatus.textContent = `${name} ${remove ? "removed from" : "saved to"} ${userName === "guest" ? "the guest" : userName + "'s"} favourites.`;
       } catch {
         favoritesStatus.textContent = "Favorites could not be saved. Browser storage may be blocked, full, or damaged; see the README for recovery steps.";
       }
@@ -209,19 +312,73 @@ if (favoriteCards.length && favoritesStatus) {
     card.append(button);
   }
 
+  if (favoriteUserTrigger) {
+    favoriteUserTrigger.addEventListener("click", openLoginModal);
+  }
+
+  if (favoriteUserCloseButton) {
+    favoriteUserCloseButton.addEventListener("click", closeLoginModal);
+  }
+
+  if (favoriteUserModal) {
+    favoriteUserModal.addEventListener("click", (event) => {
+      if (event.target.dataset.closeModal === "true") closeLoginModal();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !favoriteUserModal.hidden) closeLoginModal();
+    });
+  }
+
+  if (favoriteUserLoginButton) {
+    favoriteUserLoginButton.addEventListener("click", () => {
+      const enteredName = favoriteUserNameInput?.value.trim();
+      if (!enteredName) {
+        favoritesStatus.textContent = "Enter a name before logging in to create a separate favourites list.";
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(currentUserNameKey, enteredName);
+        applyUserLoginState();
+        loadFavoritesForCurrentUser();
+        closeLoginModal();
+      } catch {
+        favoritesStatus.textContent = "The user login could not be saved. Browser storage may be blocked or damaged.";
+      }
+    });
+  }
+
+  if (favoriteUserLogoutButton) {
+    favoriteUserLogoutButton.addEventListener("click", () => {
+      try {
+        window.localStorage.removeItem(currentUserNameKey);
+        applyUserLoginState();
+        loadFavoritesForCurrentUser();
+        closeLoginModal();
+      } catch {
+        favoritesStatus.textContent = "The user could not be switched back to guest mode.";
+      }
+    });
+  }
+
   favoritesStatus.hidden = false;
+  applyUserLoginState();
   try {
-    renderFavorites(readFavorites());
+    loadFavoritesForCurrentUser();
   } catch {
     favoritesStatus.textContent = "Favorites could not be loaded. Browser storage may be blocked or damaged; see the README for recovery steps.";
   }
 
   window.addEventListener("storage", (event) => {
-    if (event.key !== storageKey && event.key !== null) return;
+    if (event.key !== null && event.key !== currentUserNameKey && event.key !== getFavoritesStorageKeyForUser(getCurrentUserName())) return;
     try {
       if (event.storageArea !== window.localStorage) return;
-      renderFavorites(readFavorites());
-      favoritesStatus.textContent = "Favorites updated from another tab.";
+      applyUserLoginState();
+      const { favorites, expired } = readFavorites(getCurrentUserName());
+      renderFavorites(favorites);
+      favoritesStatus.textContent = expired
+        ? `Your favourites for ${getCurrentUserName()} expired after one week and have been reset.`
+        : `Favorites updated for ${getCurrentUserName()}.`;
     } catch {
       favoritesStatus.textContent = "Favorites could not be refreshed. Browser storage may be blocked or damaged; see the README for recovery steps.";
     }
