@@ -155,6 +155,209 @@ if (newsletterForm && newsletterStatus) {
   newsletterForm.querySelector("fieldset").disabled = false;
 }
 
+const authModal = document.getElementById("auth-modal");
+const authButton = document.getElementById("header-auth-button");
+const authCloseButton = document.getElementById("auth-close-button");
+const authStatus = document.getElementById("auth-status");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const authTabs = [...document.querySelectorAll(".auth-tab")];
+const registeredUsersKey = "la-tavola-registered-users";
+const currentUserDataKey = "la-tavola-current-user-data";
+const currentUserNameKey = "la-tavola-current-user-name";
+
+function getLastName(fullName) {
+  const names = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  return names.length > 1 ? names[names.length - 1] : names[0] || "Guest";
+}
+
+function getCurrentUser() {
+  const saved = window.localStorage.getItem(currentUserDataKey);
+  if (!saved) {
+    const fallbackName = window.localStorage.getItem(currentUserNameKey);
+    return fallbackName ? { fullName: fallbackName, lastName: getLastName(fallbackName), email: "" } : null;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    if (parsed && typeof parsed.fullName === "string") {
+      return {
+        fullName: parsed.fullName,
+        lastName: parsed.lastName || getLastName(parsed.fullName),
+        email: typeof parsed.email === "string" ? parsed.email : "",
+        mobileNumber: typeof parsed.mobileNumber === "string" ? parsed.mobileNumber : "",
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function setCurrentUser(user) {
+  if (!user) {
+    window.localStorage.removeItem(currentUserDataKey);
+    window.localStorage.removeItem(currentUserNameKey);
+    return;
+  }
+
+  const prepared = {
+    fullName: user.fullName,
+    lastName: user.lastName || getLastName(user.fullName),
+    email: user.email,
+    mobileNumber: user.mobileNumber || "",
+  };
+
+  window.localStorage.setItem(currentUserDataKey, JSON.stringify(prepared));
+  window.localStorage.setItem(currentUserNameKey, prepared.fullName);
+}
+
+function updateAuthButton() {
+  const user = getCurrentUser();
+  if (authButton) {
+    const isLoggedIn = Boolean(user);
+    authButton.textContent = user ? `Welcome ${user.lastName}` : "Log in";
+    authButton.setAttribute("aria-label", user ? `Welcome ${user.lastName}` : "Log in");
+    authButton.classList.toggle("is-logged-in", isLoggedIn);
+  }
+}
+
+function openAuthModal() {
+  if (!authModal) return;
+  authModal.hidden = false;
+  updateAuthButton();
+  requestAnimationFrame(() => {
+    const activeForm = document.querySelector(".auth-form:not([hidden]) input");
+    activeForm?.focus();
+  });
+}
+
+function closeAuthModal() {
+  if (!authModal) return;
+  authModal.hidden = true;
+}
+
+function setAuthTab(tabName) {
+  const tabButtons = [...document.querySelectorAll(".auth-tab")];
+  const loginPanel = document.getElementById("login-form");
+  const registerPanel = document.getElementById("register-form");
+
+  const isLogin = tabName === "login";
+  for (const tab of tabButtons) {
+    const active = tab.dataset.authTab === tabName;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-selected", String(active));
+  }
+
+  if (loginPanel) loginPanel.hidden = !isLogin;
+  if (registerPanel) registerPanel.hidden = isLogin;
+
+  const nextField = isLogin
+    ? document.getElementById("login-email")
+    : document.getElementById("register-full-name");
+  nextField?.focus();
+}
+
+function getRegisteredUsers() {
+  const saved = window.localStorage.getItem(registeredUsersKey);
+  if (!saved) return [];
+
+  try {
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRegisteredUsers(users) {
+  window.localStorage.setItem(registeredUsersKey, JSON.stringify(users));
+}
+
+if (authButton && authModal) {
+  authButton.addEventListener("click", openAuthModal);
+  authCloseButton?.addEventListener("click", closeAuthModal);
+  authModal.addEventListener("click", (event) => {
+    if (event.target.dataset.closeAuth === "true") closeAuthModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !authModal.hidden) closeAuthModal();
+  });
+
+  for (const tab of authTabs) {
+    tab.addEventListener("click", () => setAuthTab(tab.dataset.authTab));
+  }
+
+  if (loginForm && registerForm) {
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(loginForm);
+      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        authStatus.textContent = "Please enter a valid email address.";
+        return;
+      }
+
+      const users = getRegisteredUsers();
+      const user = users.find((entry) => String(entry.email ?? "").trim().toLowerCase() === email);
+      if (!user) {
+        authStatus.textContent = "No account was found for that email. Please register first.";
+        return;
+      }
+
+      setCurrentUser(user);
+      updateAuthButton();
+      closeAuthModal();
+      authStatus.textContent = "Please log in or create an account.";
+      loginForm.reset();
+    });
+
+    registerForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(registerForm);
+      const fullName = String(formData.get("fullName") ?? "").trim();
+      const mobileNumber = String(formData.get("mobile") ?? "").trim();
+      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+      if (!fullName || !mobileNumber || !email) {
+        authStatus.textContent = "Please complete all three fields: full name, mobile number, and email address.";
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        authStatus.textContent = "Please enter a valid email address.";
+        return;
+      }
+
+      const users = getRegisteredUsers();
+      if (users.some((entry) => String(entry.email ?? "").trim().toLowerCase() === email)) {
+        authStatus.textContent = "This email is already registered. Please log in instead.";
+        setAuthTab("login");
+        return;
+      }
+
+      const user = {
+        fullName,
+        mobileNumber,
+        email,
+        lastName: getLastName(fullName),
+      };
+
+      users.push(user);
+      saveRegisteredUsers(users);
+      setCurrentUser(user);
+      updateAuthButton();
+      closeAuthModal();
+      authStatus.textContent = "Please log in or create an account.";
+      registerForm.reset();
+    });
+  }
+
+  updateAuthButton();
+}
+
 const favoriteCards = [...document.querySelectorAll(".menu-card[data-dish-id]")];
 const favoritesStatus = document.getElementById("favorites-status");
 const favoriteUserTrigger = document.getElementById("favorite-user-trigger");
@@ -164,7 +367,6 @@ const favoriteUserNameInput = document.getElementById("favorite-user-name");
 const favoriteUserLoginButton = document.getElementById("favorite-user-login");
 const favoriteUserLogoutButton = document.getElementById("favorite-user-logout");
 const favoriteUserStatus = document.getElementById("favorite-user-status");
-const currentUserNameKey = "la-tavola-current-user-name";
 
 function normalizeUserKey(value) {
   return String(value ?? "guest")
