@@ -361,6 +361,14 @@ a:hover {
   color: var(--color-ink);
 }
 
+.field-error {
+  min-height: 1.2rem;
+  margin: 0.2rem 0 0;
+  color: var(--color-tomato);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
 .auth-form button {
   margin-top: 0.75rem;
 }

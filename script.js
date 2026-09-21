@@ -161,6 +161,8 @@ const authCloseButton = document.getElementById("auth-close-button");
 const authStatus = document.getElementById("auth-status");
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
+const registerEmailInput = document.getElementById("register-email");
+const registerEmailError = document.getElementById("register-email-error");
 const authTabs = [...document.querySelectorAll(".auth-tab")];
 const registeredUsersKey = "la-tavola-registered-users";
 const currentUserDataKey = "la-tavola-current-user-data";
@@ -259,20 +261,76 @@ function setAuthTab(tabName) {
   nextField?.focus();
 }
 
+function normalizeEmail(email) {
+  return String(email ?? "").trim().toLowerCase();
+}
+
 function getRegisteredUsers() {
   const saved = window.localStorage.getItem(registeredUsersKey);
   if (!saved) return [];
 
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    const cleaned = [];
+    const seen = new Set();
+
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== "object") continue;
+
+      const email = normalizeEmail(entry.email);
+      const fullName = String(entry.fullName ?? "").trim();
+      if (!email || !fullName || seen.has(email)) continue;
+
+      seen.add(email);
+      cleaned.push({
+        fullName,
+        mobileNumber: String(entry.mobileNumber ?? "").trim(),
+        email,
+        lastName: entry.lastName || getLastName(fullName),
+      });
+    }
+
+    if (cleaned.length !== parsed.length) {
+      saveRegisteredUsers(cleaned);
+    }
+
+    return cleaned;
   } catch {
     return [];
   }
 }
 
 function saveRegisteredUsers(users) {
-  window.localStorage.setItem(registeredUsersKey, JSON.stringify(users));
+  const deduped = [];
+  const seen = new Set();
+
+  for (const entry of Array.isArray(users) ? users : []) {
+    if (!entry || typeof entry !== "object") continue;
+
+    const email = normalizeEmail(entry.email);
+    const fullName = String(entry.fullName ?? "").trim();
+    if (!email || !fullName || seen.has(email)) continue;
+
+    seen.add(email);
+    deduped.push({
+      fullName,
+      mobileNumber: String(entry.mobileNumber ?? "").trim(),
+      email,
+      lastName: entry.lastName || getLastName(fullName),
+    });
+  }
+
+  window.localStorage.setItem(registeredUsersKey, JSON.stringify(deduped));
+}
+
+function showFieldError(input, message) {
+  if (!input || !registerEmailError) return;
+  input.setAttribute("aria-invalid", message ? "true" : "false");
+  input.style.borderColor = message ? "#a32d24" : "";
+  input.style.boxShadow = message ? "0 0 0 2px rgba(163, 45, 36, 0.1)" : "";
+  registerEmailError.textContent = message;
 }
 
 if (authButton && authModal) {
@@ -293,7 +351,7 @@ if (authButton && authModal) {
     loginForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const formData = new FormData(loginForm);
-      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+      const email = normalizeEmail(formData.get("email"));
 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         authStatus.textContent = "Please enter a valid email address.";
@@ -301,7 +359,7 @@ if (authButton && authModal) {
       }
 
       const users = getRegisteredUsers();
-      const user = users.find((entry) => String(entry.email ?? "").trim().toLowerCase() === email);
+      const user = users.find((entry) => normalizeEmail(entry.email) === email);
       if (!user) {
         authStatus.textContent = "No account was found for that email. Please register first.";
         return;
@@ -319,22 +377,24 @@ if (authButton && authModal) {
       const formData = new FormData(registerForm);
       const fullName = String(formData.get("fullName") ?? "").trim();
       const mobileNumber = String(formData.get("mobile") ?? "").trim();
-      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+      const email = normalizeEmail(formData.get("email"));
 
       if (!fullName || !mobileNumber || !email) {
         authStatus.textContent = "Please complete all three fields: full name, mobile number, and email address.";
+        showFieldError(registerEmailInput, email ? "" : "Email address is required.");
         return;
       }
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         authStatus.textContent = "Please enter a valid email address.";
+        showFieldError(registerEmailInput, "Please enter a valid email address.");
         return;
       }
 
       const users = getRegisteredUsers();
-      if (users.some((entry) => String(entry.email ?? "").trim().toLowerCase() === email)) {
-        authStatus.textContent = "This email is already registered. Please log in instead.";
-        setAuthTab("login");
+      if (users.some((entry) => normalizeEmail(entry.email) === email)) {
+        authStatus.textContent = "";
+        showFieldError(registerEmailInput, "This email is already registered. Please log in instead.");
         return;
       }
 
@@ -345,13 +405,19 @@ if (authButton && authModal) {
         lastName: getLastName(fullName),
       };
 
-      users.push(user);
-      saveRegisteredUsers(users);
+      const updatedUsers = [...users, user];
+      saveRegisteredUsers(updatedUsers);
+      showFieldError(registerEmailInput, "");
       setCurrentUser(user);
       updateAuthButton();
       closeAuthModal();
       authStatus.textContent = "Please log in or create an account.";
       registerForm.reset();
+    });
+
+    registerEmailInput?.addEventListener("input", () => {
+      showFieldError(registerEmailInput, "");
+      authStatus.textContent = "Please log in or create an account.";
     });
   }
 

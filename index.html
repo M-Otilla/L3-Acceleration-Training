@@ -59,7 +59,8 @@
           <input id="register-mobile" name="mobile" type="tel" placeholder="09XXXXXXXXX" inputmode="numeric" autocomplete="tel" required>
 
           <label for="register-email">Email Address</label>
-          <input id="register-email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required>
+          <input id="register-email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required aria-invalid="false">
+          <p class="field-error" id="register-email-error" aria-live="polite"></p>
 
           <button class="button" type="submit">Create account</button>
         </form>
