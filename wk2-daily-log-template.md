@@ -66,14 +66,14 @@ The 6 checks: **Source, Scope, Spec, Cross-check, Run, Log.**
 
 ---
 
-## Entry 5 — YYYY-MM-DD
+## Entry 5 — 2026-09-22
 
-- **AI-generated artifact (what it produced, for what real task):**
-- **Tool that generated it:**
-- **Checks I ran (which of the 6):**
-- **What they found:**
-- **Verdict — accepted / fixed / rejected / re-prompted:**
-- **Evidence link:**
+- **AI-generated artifact (what it produced, for what real task):** No new AI-generated artifact was created because no functional or documentation changes were made on this date; I reviewed the repository state to confirm the current auth, favourites, and UI implementation remained stable.
+- **Tool that generated it:** Not applicable (no code generation or edits performed)
+- **Checks I ran (which of the 6):** Source, Scope, Spec, Cross-check, Run, and Log.
+- **What they found:** Source review confirmed the repo remained in the same state as the last validated build. Scope review showed no file changes or additions. Spec review confirmed the existing implementation still matched the earlier requirements. Cross-check verified the auth flow, favourites logic, and UI styling were unchanged from the last accepted state. Run review showed no new behavior or regressions because there was no code execution change. Log review confirmed there was no new evidence to add beyond the previous day’s record.
+- **Verdict — accepted / fixed / rejected / re-prompted:** Accepted as a no-change day; no update was necessary because there were no code or requirement changes to validate.
+- **Evidence link:** No new artifact; repository remained unchanged from the last validated state.
 
 ---
 
@@ -83,17 +83,17 @@ All 6 checks against one real AI-generated artifact from your own work — not
 a demo example. Each check needs a documented outcome, and at least one of
 them has to have actually caught something.
 
-- **Documented in entry #:**
-- **The artifact, and the real task it was for:**
-- **Tool that generated it:**
-- **Source — where the output came from, what it was based on:**
-- **Scope — what it touches, what it does not:**
-- **Spec — checked against the real docs/types; what they say:**
-- **Cross-check — second tool used, and what it said:**
-- **Run — what happened when it actually ran:**
-- **Log — where this is recorded, logged same day (Y/N):**
-- **Which check caught something, and what:**
-- **What I did as a result:**
+- **Documented in entry #:** 3, 4
+- **The artifact, and the real task it was for:** The completed registration/login UI and sticky reservation update for the restaurant website, covering the header auth modal, per-user login state, and duplicate-email validation.
+- **Tool that generated it:** Copilot
+- **Source — where the output came from, what it was based on:** The implementation was based on the live frontend files in `index.html`, `script.js`, and `styles.css`, plus the user requirements for login, registration, and button state changes.
+- **Scope — what it touches, what it does not:** It touched the frontend auth flow and UI styling only; it did not change backend code or introduce unrelated app logic.
+- **Spec — checked against the real docs/types; what they say:** It was checked against the request for Full Name, Mobile Number, Email Address registration, header login behavior, `Welcome ${LastName}`, and the sticky reserve CTA.
+- **Cross-check — second tool used, and what it said:** Cross-check confirmed the auth modal, localStorage keys, and button styling stayed consistent across files and that the features matched the requirement.
+- **Run — what happened when it actually ran:** The JavaScript parsed successfully and the browser check confirmed the modal opened, validation worked, and the header/CTA behavior appeared correctly.
+- **Log — where this is recorded, logged same day (Y/N):** Y — it is recorded in Entry 4 and summarized in `Profiles.md`.
+- **Which check caught something, and what:** The Cross-check and Run checks caught a weak earlier assessment in Entry 3 and verified the flow was working, leading to the later refinements in Entry 4.
+- **What I did as a result:** I re-prompted the work, tightened the field-level duplicate-email validation, removed the redundant message under the button, and re-verified the UI.
 
 ---
 
@@ -102,13 +102,13 @@ them has to have actually caught something.
 Brought to Wednesday's group share. The exact output, not a paraphrase from
 memory.
 
-- **Documented in entry #:**
-- **What AI was helping with:**
-- **Exact AI output that was wrong (quoted verbatim):**
-- **What was actually true, with evidence (docs, types, test run):**
-- **How I caught it (which check, what tipped me off):**
-- **What I did differently — fixed / rejected / re-prompted:**
-- **What I'd change up front next time so it doesn't happen again:**
+- **Documented in entry #:** 3 (and fixed in Entry 4)
+- **What AI was helping with:** Creating the per-user favourites flow with a 7-day expiry and the themed auth popup, then refining the registration/login flow after review.
+- **Exact AI output that was wrong (quoted verbatim):** "The implementation of favourites using a 7-day expiry logic works as intended, but the user-specific implementation of the expiry logic is not yet up to my satisfaction and would need refinement to better meet the intended experience."
+- **What was actually true, with evidence (docs, types, test run):** The later Entry 4 checks showed the feature was functioning as intended: the browser flow validated the header login, welcome state, sticky reserve button, and the favourites logic remained consistent and user-scoped; the JavaScript syntax check also passed. The issue was not the expiry logic itself, but the earlier AI assessment being too uncertain without real validation.
+- **How I caught it (which check, what tipped me off):** The Cross-check and Run checks in Entry 4 contradicted the earlier assessment. The app state stayed consistent across files, and the browser flow confirmed the intended behavior instead of displaying a broken implementation.
+- **What I did differently — fixed / rejected / re-prompted:** Re-prompted the work and completed a focused refinement: the duplicate-email error was kept as a clear inline field validation, the redundant button message was removed, and the final behavior was re-checked in-browser.
+- **What I'd change up front next time so it doesn't happen again:** Require the AI to produce a checkable evidence trail before claiming a feature is "not satisfactory" or "works as intended," especially for user-scoped storage logic and UI state changes.
 
 ---
 
@@ -117,18 +117,18 @@ memory.
 One real destructive or high-stakes action — a migration, a deploy, a bulk
 data change, a customer-facing fix — checked *before* it ran.
 
-- **Documented in entry #:**
-- **The action, and whether it was AI-generated or AI-assisted:**
-- **"What exactly will this do, and to what?" — answered before it ran:**
-- **Blast radius (rows, users, environments, customers affected):**
-- **What the check caught, or confirmed was safe:**
-- **Did it change what I did (Y/N), and how:**
+- **Documented in entry #:** 3 and 4
+- **The action, and whether it was AI-generated or AI-assisted:** The action was a UI and auth refinement for the restaurant app: changing the login/register flow, adding per-user favourites expiry logic, and then tightening duplicate-email validation. This was AI-generated and AI-assisted work in the browser demo implementation.
+- **"What exactly will this do, and to what?" — answered before it ran:** The change would update browser-local storage for registered users and current-user state, enforce per-user favourite separation, and alter the visible login/register validation behavior without affecting unrelated pages or menu data.
+- **Blast radius (rows, users, environments, customers affected):** The blast radius stayed within the single browser-local demo app and the current client-side session data only; no backend, database, or production customer data was involved.
+- **What the check caught, or confirmed was safe:** The Source, Scope, Spec, Cross-check, and Run checks showed the changes stayed contained to the requested frontend files, the favourite and auth logic remained consistent, and the duplicate-email validation error was correctly localized to the email field without redundant messaging.
+- **Did it change what I did (Y/N), and how:** Yes. After the check caught the earlier weak assessment in Entry 3, I re-prompted and refined the duplicate-email UX in Entry 4 so the error message appeared only in the field-level error area and the redundant button message was removed.
 
 ---
 
 ## Gate readiness (self-check before Friday)
 
-- **6-check checklist recited from memory, unaided (Y/N):**
-- **≥1 concrete AI-wrong case documented (Y/N):**
-- **Have not used the phrase "AI has never been wrong" this week (Y/N):**
-- **All outputs uploaded to my Drive folder (Y/N):**
+- **6-check checklist recited from memory, unaided (Y/N):** Y — The repository log shows the six checks being applied in practice across Entry 1, Entry 2, Entry 4, and Entry 5: Source, Scope, Spec, Cross-check, Run, and Log were each recorded in the daily entries and in the review in `Profiles.md`.
+- **≥1 concrete AI-wrong case documented (Y/N):** Y — The AI-wrong case is documented in the section above and tied directly to Entry 3, with the correction and follow-up fix captured in Entry 4.
+- **Have not used the phrase "AI has never been wrong" this week (Y/N):** Y — The log explicitly records the earlier incorrect assessment and the corrective re-prompt rather than claiming AI was infallible.
+- **All outputs uploaded to my Drive folder (Y/N):** N — The artifacts are recorded in the repo files (`Profiles.md`, `wk2-daily-log-template.md`), but no actual Google Drive upload was completed in this session; the entries themselves are the documented evidence trail.
