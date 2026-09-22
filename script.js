@@ -157,6 +157,8 @@ if (newsletterForm && newsletterStatus) {
 
 const authModal = document.getElementById("auth-modal");
 const authButton = document.getElementById("header-auth-button");
+const authDropdown = document.getElementById("header-auth-dropdown");
+const logoutButton = document.getElementById("header-logout-button");
 const authCloseButton = document.getElementById("auth-close-button");
 const authStatus = document.getElementById("auth-status");
 const loginForm = document.getElementById("login-form");
@@ -221,8 +223,22 @@ function updateAuthButton() {
     const isLoggedIn = Boolean(user);
     authButton.textContent = user ? `Welcome ${user.lastName}` : "Log in";
     authButton.setAttribute("aria-label", user ? `Welcome ${user.lastName}` : "Log in");
+    authButton.setAttribute("aria-expanded", "false");
     authButton.classList.toggle("is-logged-in", isLoggedIn);
   }
+  if (authDropdown) authDropdown.hidden = true;
+}
+
+function toggleAuthDropdown() {
+  if (!authButton || !authDropdown || !getCurrentUser()) return;
+  const isOpen = !authDropdown.hidden;
+  authDropdown.hidden = isOpen;
+  authButton.setAttribute("aria-expanded", String(!isOpen));
+}
+
+function logoutCurrentUser() {
+  setCurrentUser(null);
+  updateAuthButton();
 }
 
 function openAuthModal() {
@@ -334,13 +350,23 @@ function showFieldError(input, message) {
 }
 
 if (authButton && authModal) {
-  authButton.addEventListener("click", openAuthModal);
+  authButton.addEventListener("click", () => {
+    if (getCurrentUser()) toggleAuthDropdown();
+    else openAuthModal();
+  });
+  logoutButton?.addEventListener("click", logoutCurrentUser);
   authCloseButton?.addEventListener("click", closeAuthModal);
   authModal.addEventListener("click", (event) => {
     if (event.target.dataset.closeAuth === "true") closeAuthModal();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !authModal.hidden) closeAuthModal();
+    if (event.key === "Escape" && authDropdown && !authDropdown.hidden) updateAuthButton();
+  });
+  document.addEventListener("click", (event) => {
+    if (authDropdown && !authDropdown.hidden && !event.target.closest(".header-auth-menu")) {
+      updateAuthButton();
+    }
   });
 
   for (const tab of authTabs) {
@@ -426,7 +452,6 @@ if (authButton && authModal) {
 
 const favoriteCards = [...document.querySelectorAll(".menu-card[data-dish-id]")];
 const favoritesStatus = document.getElementById("favorites-status");
-const favoriteUserTrigger = document.getElementById("favorite-user-trigger");
 const favoriteUserModal = document.getElementById("favorite-user-modal");
 const favoriteUserCloseButton = document.getElementById("favorite-user-close");
 const favoriteUserNameInput = document.getElementById("favorite-user-name");
@@ -510,9 +535,6 @@ if (favoriteCards.length && favoritesStatus) {
   function applyUserLoginState() {
     const userName = getCurrentUserName();
     const isGuest = userName === "guest" || userName.trim() === "";
-    if (favoriteUserTrigger) {
-      favoriteUserTrigger.textContent = isGuest ? "Favourites profile" : `Profile: ${userName}`;
-    }
     if (favoriteUserNameInput) {
       favoriteUserNameInput.value = isGuest ? "" : userName;
     }
@@ -578,10 +600,6 @@ if (favoriteCards.length && favoritesStatus) {
     });
     buttons.set(id, { button, name });
     card.append(button);
-  }
-
-  if (favoriteUserTrigger) {
-    favoriteUserTrigger.addEventListener("click", openLoginModal);
   }
 
   if (favoriteUserCloseButton) {

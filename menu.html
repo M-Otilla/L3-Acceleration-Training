@@ -26,7 +26,12 @@
               <li><a href="index.html#visit">Visit</a></li>
             </ul>
           </nav>
-          <button id="header-auth-button" class="button button-small header-auth" type="button">Log in</button>
+          <div class="header-auth-menu">
+            <button id="header-auth-button" class="button button-small header-auth" type="button" aria-haspopup="true" aria-expanded="false">Log in</button>
+            <div id="header-auth-dropdown" class="header-auth-dropdown" hidden>
+              <button id="header-logout-button" type="button">Logout?</button>
+            </div>
+          </div>
           <a class="button button-small header-reserve" href="index.html#reservations">Reserve a Table <span aria-hidden="true">&nearr;</span></a>
         </div>
       </div>
@@ -77,9 +82,6 @@
       </section>
 
       <div class="container menu-content">
-        <div class="user-login-panel" aria-label="User favourites login">
-          <button id="favorite-user-trigger" class="button button-small" type="button">Favourites profile</button>
-        </div>
         <div id="favorite-user-modal" class="favorites-login-modal" hidden>
           <div class="favorites-login-backdrop" data-close-modal="true"></div>
           <div class="favorites-login-dialog" role="dialog" aria-modal="true" aria-labelledby="favorite-user-modal-title">

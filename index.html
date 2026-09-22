@@ -28,7 +28,12 @@
               <li><a href="index.html#visit">Visit</a></li>
             </ul>
           </nav>
-          <button id="header-auth-button" class="button button-small header-auth" type="button">Log in</button>
+          <div class="header-auth-menu">
+            <button id="header-auth-button" class="button button-small header-auth" type="button" aria-haspopup="true" aria-expanded="false">Log in</button>
+            <div id="header-auth-dropdown" class="header-auth-dropdown" hidden>
+              <button id="header-logout-button" type="button">Logout?</button>
+            </div>
+          </div>
           <a class="button button-small header-reserve header-reserve-sticky" href="index.html#reservations">Reserve a Table <span aria-hidden="true">&nearr;</span></a>
         </div>
       </div>
