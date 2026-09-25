@@ -372,8 +372,16 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [currentUser, setCurrentUserState] = useState<AuthUser | null>(() => getCurrentUser());
+  const [currentUser, setCurrentUserState] = useState<AuthUser | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setCurrentUserState(getCurrentUser());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -525,4 +533,3 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
     </>
   );
 }
-

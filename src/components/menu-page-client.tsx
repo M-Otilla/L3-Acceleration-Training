@@ -112,23 +112,12 @@ const filterOptions = [
 ] as const;
 
 export function MenuPageClient() {
-  const initialUserName = getCurrentUserName();
-  const initialFavoritesState = getInitialFavoritesState(initialUserName);
-  const [activeFilter, setActiveFilter] = useState(() => {
-    if (typeof window === "undefined") {
-      return "all";
-    }
-
-    const hash = window.location.hash.slice(1);
-    if (hash === "favorites") {
-      return "favorites";
-    }
-
-    return menuCategories.some((category) => category.id === hash) ? hash : "all";
-  });
-  const [favorites, setFavorites] = useState<Set<string>>(initialFavoritesState.favorites);
-  const [favoritesStatus, setFavoritesStatus] = useState(initialFavoritesState.message);
-  const [favoriteUserName, setFavoriteUserName] = useState(initialUserName === "guest" ? "" : initialUserName);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set<string>());
+  const [favoritesStatus, setFavoritesStatus] = useState(
+    "Favorites are saved under the current guest profile. Log in with a name to keep a separate list.",
+  );
+  const [favoriteUserName, setFavoriteUserName] = useState("");
   const [favoriteUserModalOpen, setFavoriteUserModalOpen] = useState(false);
 
   const filterStatus = useMemo(() => {
@@ -168,6 +157,21 @@ export function MenuPageClient() {
   };
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const currentName = getCurrentUserName();
+      setFavoriteUserName(currentName === "guest" ? "" : currentName);
+
+      try {
+        const initialFavoritesState = getInitialFavoritesState(currentName);
+        setFavorites(initialFavoritesState.favorites);
+        setFavoritesStatus(initialFavoritesState.message);
+      } catch {
+        setFavoritesStatus(
+          "Favorites could not be loaded. Browser storage may be blocked or damaged; see the README for recovery steps.",
+        );
+      }
+    });
+
     const applyHash = () => {
       const currentHash = window.location.hash.slice(1);
       if (currentHash === "favorites") {
@@ -183,7 +187,10 @@ export function MenuPageClient() {
 
     applyHash();
     window.addEventListener("hashchange", applyHash);
-    return () => window.removeEventListener("hashchange", applyHash);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", applyHash);
+    };
   }, []);
 
   useEffect(() => {
@@ -459,4 +466,3 @@ export function MenuPageClient() {
     </div>
   );
 }
-
