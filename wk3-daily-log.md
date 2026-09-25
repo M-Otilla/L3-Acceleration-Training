@@ -4,6 +4,8 @@ Participant: Track: Developers
 
 Copy this file into your Google Drive folder and fill in one entry per day. Five entries by the end of week, logged the same day as the work.
 
+### Repo:
+- https://github.com/M-Otilla/L3-Acceleration-Training
 ### Branches: 
 * Oneshot (Published)
 * Multi-turn (WIP)
