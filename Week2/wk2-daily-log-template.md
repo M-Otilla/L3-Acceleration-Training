@@ -118,11 +118,11 @@ One real destructive or high-stakes action — a migration, a deploy, a bulk
 data change, a customer-facing fix — checked *before* it ran.
 
 - **Documented in entry #:** 3 and 4
-- **The action, and whether it was AI-generated or AI-assisted:** The action was a UI and auth refinement for the restaurant app: changing the login/register flow, adding per-user favourites expiry logic, and then tightening duplicate-email validation. This was AI-generated and AI-assisted work in the browser demo implementation.
-- **"What exactly will this do, and to what?" — answered before it ran:** The change would update browser-local storage for registered users and current-user state, enforce per-user favourite separation, and alter the visible login/register validation behavior without affecting unrelated pages or menu data.
-- **Blast radius (rows, users, environments, customers affected):** The blast radius stayed within the single browser-local demo app and the current client-side session data only; no backend, database, or production customer data was involved.
-- **What the check caught, or confirmed was safe:** The Source, Scope, Spec, Cross-check, and Run checks showed the changes stayed contained to the requested frontend files, the favourite and auth logic remained consistent, and the duplicate-email validation error was correctly localized to the email field without redundant messaging.
-- **Did it change what I did (Y/N), and how:** Yes. After the check caught the earlier weak assessment in Entry 3, I re-prompted and refined the duplicate-email UX in Entry 4 so the error message appeared only in the field-level error area and the redundant button message was removed.
+One real destructive or high-stakes action — a migration, a deploy, a bulk
+data change, a customer-facing fix — checked *before* it ran.
+
+- **Documented in entry #:** 3 and 4
+- **The action, and whether it was AI-generated or AI-assisted:** Before merging Entries 3 and 4's output into the main branch, I paused to check: adding per-user favourites with expiry logic (Entry 3) and a registration/login flow with duplicate-email validation (Entry 4). Both were AI-generated and AI-assisted. In production, these are user-facing auth and data-persistence changes — the kind that break login for real customers or silently corrupt stored preferences if wrong.
 
 ---
 
