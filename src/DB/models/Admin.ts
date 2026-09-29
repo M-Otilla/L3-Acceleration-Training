@@ -2,10 +2,9 @@ import mongoose, { Schema } from "mongoose";
 
 import { normalizeEmail } from "@/API/helpers";
 
-const UserSchema = new Schema(
+const AdminSchema = new Schema(
   {
     fullName: { type: String, required: true, trim: true },
-    mobileNumber: { type: String, required: true, trim: true },
     email: {
       type: String,
       required: true,
@@ -39,8 +38,8 @@ const UserSchema = new Schema(
   },
 );
 
-UserSchema.index({ email: 1 }, { unique: true });
+AdminSchema.index({ email: 1 }, { unique: true });
 
-const User = mongoose.models.User || mongoose.model("User", UserSchema, "users");
+const Admin = mongoose.models.Admin || mongoose.model("Admin", AdminSchema, "admins");
 
-export default User;
+export default Admin;

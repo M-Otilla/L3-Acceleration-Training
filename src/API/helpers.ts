@@ -280,6 +280,101 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
 
+export function validateAdminInput(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Request body must be a JSON object.");
+  }
+
+  const { fullName, email, password } = payload as Record<string, unknown>;
+
+  if (typeof fullName !== "string" || !fullName.trim()) {
+    throw new Error("fullName is required.");
+  }
+
+  if (typeof email !== "string" || !email.trim()) {
+    throw new Error("email is required.");
+  }
+
+  if (typeof password !== "string" || !password.trim()) {
+    throw new Error("password is required.");
+  }
+
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new Error("email must be a valid email address.");
+  }
+
+  if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    throw new Error("password must be at least 8 characters with at least one letter and one number.");
+  }
+
+  return {
+    fullName: fullName.trim(),
+    email: normalizedEmail,
+    password,
+  };
+}
+
+export function validateAdminUpdateInput(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Request body must be a JSON object.");
+  }
+
+  const updates: Record<string, string> = {};
+  const { fullName, email, password } = payload as Record<string, unknown>;
+
+  if (typeof fullName !== "undefined") {
+    if (typeof fullName !== "string" || !fullName.trim()) {
+      throw new Error("fullName is required.");
+    }
+
+    updates.fullName = fullName.trim();
+  }
+
+  if (typeof email !== "undefined") {
+    if (typeof email !== "string" || !email.trim()) {
+      throw new Error("email is required.");
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      throw new Error("email must be a valid email address.");
+    }
+
+    updates.email = normalizedEmail;
+  }
+
+  if (typeof password !== "undefined") {
+    if (typeof password !== "string" || !password.trim()) {
+      throw new Error("password is required.");
+    }
+
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      throw new Error("password must be at least 8 characters with at least one letter and one number.");
+    }
+
+    updates.password = password;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error("At least one valid admin field must be provided.");
+  }
+
+  return updates;
+}
+
+export function serializeAdmin(value: Record<string, unknown>) {
+  const plain = sanitizePlainObject(value);
+
+  if (typeof plain.email === "string") {
+    plain.email = normalizeEmail(plain.email);
+  }
+
+  return plain;
+}
+
 export function isDuplicateKeyError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;

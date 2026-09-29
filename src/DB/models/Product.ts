@@ -42,6 +42,6 @@ const ProductSchema = new Schema(
 ProductSchema.index({ slug: 1 }, { unique: true });
 ProductSchema.index({ productCode: 1 }, { unique: true });
 
-const Product = mongoose.models.Product || mongoose.model("Product", ProductSchema);
+const Product = mongoose.models.Product || mongoose.model("Product", ProductSchema, "products");
 
 export default Product;
