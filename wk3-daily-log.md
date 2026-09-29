@@ -93,11 +93,30 @@ The multi-turn approach was successful in creating a stable root project scaffol
 
 ---
 
-## Entry 3 — YYYY-MM-DD
+## Entry 3 — 2026-09-29
 
-- **Activity:** 
+- **Activity:** Created database and backend environment, including full authentication infrastructure for the La Tavola restaurant website. The work focused on implementing MongoDB user model, auth API routes (login, register, logout, session), Next.js App Router cookie-based session management, and a client-side AuthContext provider that persists user state across page reloads. The session also covered fixing a critical bug where the missing `AuthProvider` in the root layout caused all auth hooks to fall back to no-op defaults, and resolving an httpOnly cookie persistence issue by adding `credentials: "include"` to every fetch call.
 
 ---
+AI model used: Claude Code
+
+Task: Build the backend database layer (MongoDB user model with Mongoose schema) and the authentication API routes (login, register, logout, session check), then wire them up through a client-side AuthContext provider so that the login state persists across page loads and the site header dynamically shows either "Log in" or "Welcome {fullName}".
+
+Issues encountered:
+* The root layout (`src/app/layout.tsx`) never rendered `AuthProvider`, so every component calling `useAuth()` received empty default no-op functions — login/register/logout did nothing and the modal just closed silently.
+* Trying to add `"use client"` directly to the server-side root layout broke `metadata` export (not allowed in Client Components). Solved by splitting into a server-side `layout.tsx` that imports a Client Component wrapper (`client-layout.tsx`) which handles the dynamic import of `AuthProvider`.
+* All `fetch()` calls in `AuthContext` were missing `credentials: "include"`, so httpOnly cookies set by the API routes were never sent back on mount. `/api/auth/me` always returned `{ data: null }`, resetting user state to `null` on reload.
+* The header displayed `user?.lastName` which doesn't exist on the User Mongoose model (only `fullName`). Logged-in users would have seen "Welcome Guest" instead of their actual name.
+* Cookie configuration used `secure: process.env.NODE_ENV === "production"`, which disables secure cookies in development — need to verify this works locally during testing.
+
+Takeaway:
+Setting up a backend authentication layer requires more than writing API routes; the client-side provider must be properly wired into the component tree, and every fetch that communicates with cookie-backed endpoints must explicitly include credentials. Without `AuthProvider` in the root layout and `credentials: "include"` on every request, the authentication state would silently fail even though the backend was fully functional. The separation between server components (layout, metadata) and client components (dynamic auth) also highlights the importance of using Next.js dynamic imports rather than forcing `"use client"` into a server file.
+
+Prompt used:
+refer to: `code planning/step4.md`
+
+Result:
+The backend was fully implemented with all four auth endpoints (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/me`), a properly validated User Mongoose schema, bcrypt password hashing, and 7-day httpOnly session cookies. The frontend had complete form handling with validation in `AuthModal`, but the missing `AuthProvider` wrapper and absent `credentials` option broke persistence. After fixing both issues, login state now correctly persists across page reloads and the header dynamically switches between "Log in" and "Welcome {fullName}".
 
 ## Entry 4 — YYYY-MM-DD
 
