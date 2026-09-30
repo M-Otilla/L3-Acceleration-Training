@@ -1403,3 +1403,184 @@ address {
   .button:not(:disabled):hover, .button:active:not(:disabled),
   .category-teasers a:hover, .menu-filters button:active { transform: none; }
 }
+
+/* ── Admin Dashboard ────────────────────────────── */
+
+.admin-products {
+  padding: 2rem 0 4rem;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-header h1 {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+}
+
+/* Alert */
+.admin-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 4px;
+  background: #fdecea;
+  color: var(--color-tomato-dark);
+  border: 1px solid #d9a09b;
+}
+
+.admin-alert-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  padding: 0 0.35rem;
+}
+
+.admin-alert-close:hover {
+  color: var(--color-tomato);
+}
+
+/* Table wrapper */
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  border-radius: 6px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.admin-th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: var(--color-cream);
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.admin-tbody-loading,
+.admin-tbody-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.admin-row-editing {
+  background: #fefdf6;
+}
+
+.admin-td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #ede5d4;
+}
+
+.admin-product-name {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.admin-td-price {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tomato);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Badge */
+.admin-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  background: var(--color-cream);
+  color: var(--color-muted);
+  border-radius: 3px;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+/* Actions column */
+.admin-th-actions,
+.admin-td-actions {
+  width: 1%;
+  white-space: nowrap;
+  padding-right: 1.25rem;
+}
+
+.admin-td-actions .button + .button {
+  margin-left: 0.4rem;
+}
+
+/* Inline edit inputs */
+.admin-input,
+.admin-select {
+  min-height: 2.4rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.admin-input:focus,
+.admin-select:focus {
+  outline-color: var(--color-olive);
+  outline-offset: 2px;
+}
+
+.admin-input-name {
+  max-width: 14rem;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .admin-table {
+    font-size: 0.85rem;
+  }
+
+  .admin-th,
+  .admin-td {
+    padding: 0.6rem 0.65rem;
+  }
+
+  .admin-input-name {
+    max-width: 9rem;
+  }
+
+  .admin-td-actions .button + .button {
+    margin-left: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .admin-input-name {
+    max-width: 7rem;
+  }
+}

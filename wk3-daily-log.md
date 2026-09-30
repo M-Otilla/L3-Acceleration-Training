@@ -118,11 +118,30 @@ refer to: `code planning/step4.md`
 Result:
 The backend was fully implemented with all four auth endpoints (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/me`), a properly validated User Mongoose schema, bcrypt password hashing, and 7-day httpOnly session cookies. The frontend had complete form handling with validation in `AuthModal`, but the missing `AuthProvider` wrapper and absent `credentials` option broke persistence. After fixing both issues, login state now correctly persists across page reloads and the header dynamically switches between "Log in" and "Welcome {fullName}".
 
-## Entry 4 — YYYY-MM-DD
+## Entry 4 — 2026-09-30
 
-- **Activity:** 
+- **Activity:** Implementation of the backend APIs to the frontend, connecting API endpoints to their corresponding pages and components so data flows from MongoDB through Next.js App Router routes into the UI. The work focused on wiring up the products API to the menu page, setting up a reusable fetch pattern with proper error handling for all public-facing pages (Home, Menu, Visit, About), and creating shared layout structure that avoids duplicating `AuthProvider`, `SiteHeader`, and navigation across every page.
 
 ---
+AI model used: Claude Code
+
+Task: Bridge the gap between backend API routes and frontend pages — connect `/api/products` to the menu page, replace all hardcoded/static content with data fetched from MongoDB through Next.js server components, establish a consistent error-handling pattern for failed fetches (server-side fallback + client-side retry), and ensure the global layout (`AuthProvider`, `SiteHeader`) wraps every page without duplication.
+
+Issues encountered:
+* The menu page currently renders static product data hardcoded in JSX; wiring it to `/api/products` requires changing from a pure Server Component to one that awaits an async fetch, which means handling loading states and empty-data edge cases.
+* Several pages (Home, Visit, About) don't have dedicated API routes yet — they rely on hardcoded content. The product category data needs to be fetched and displayed dynamically with proper fallback if the database is empty or unreachable.
+* Navigation state (`currentPage` prop passed to `SiteHeader`) needs a centralised way to determine which page header section is active, rather than duplicating URL-matching logic across pages.
+* Error handling for API calls differs between server components (throws propagate to Next.js error boundary) and client hooks (requires try/catch + state-based UI feedback), creating inconsistency in how failures present to the user.
+* The products API (`/api/products` and `/api/products/[id]`) is fully scaffolded but has no frontend consumer — menu items need to be displayed with pricing, descriptions, and category filtering that currently exist only as static data.
+
+Takeaway:
+Connecting backend APIs to the frontend is not just about calling endpoints — it's about establishing a consistent data-fetching pattern (server components for initial data, client hooks for interactive state), handling every failure mode gracefully (empty database, network errors, malformed responses), and keeping layout wrapping (`AuthProvider`, `SiteHeader`) DRY. Without these foundations in place, each page ends up with ad-hoc fetch logic that's hard to debug or reuse.
+
+Prompt used:
+refer to: `code planing/step5.md`
+
+Result:
+The backend-to-frontend bridge is established with the `/api/products` endpoint wired into the menu page, `AuthProvider` properly wrapping all pages via `client-layout.tsx`, and a reusable pattern for server-component data fetching with loading/empty states. The global layout (header navigation, auth context) now works consistently across every page without duplication.
 
 ## Entry 5 — YYYY-MM-DD
 

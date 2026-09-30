@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import AdminProductTable from "@/components/admin-product-table";
+import { useAuth } from "@/contexts/AuthContext";
 import { menuCategories } from "@/lib/menu-data";
 
 const CURRENT_USER_NAME_KEY = "la-tavola-current-user-name";

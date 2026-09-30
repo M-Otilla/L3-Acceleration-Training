@@ -1,7 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 
 import { normalizeEmail } from "@/API/helpers";
-
+/*
+{
+email:    admin@la-tavola.local
+fullname: Admin User
+password: admin12345
+}
+*/
 const AdminSchema = new Schema(
   {
     fullName: { type: String, required: true, trim: true },

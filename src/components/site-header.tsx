@@ -1,175 +1,35 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 type HeaderPage = "home" | "menu";
 
-type AuthUser = {
-  fullName: string;
-  lastName: string;
-  email: string;
-  mobileNumber: string;
-};
-
-const AUTH_STORAGE_KEY = "la-tavola-current-user-data";
-const AUTH_NAME_STORAGE_KEY = "la-tavola-current-user-name";
-const REGISTERED_USERS_KEY = "la-tavola-registered-users";
-
-function getLastName(fullName: string) {
-  const names = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
-  return names.length > 1 ? names[names.length - 1] : names[0] || "Guest";
+interface AuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-function normalizeEmail(email: string) {
+function normalizeEmail(email: string): string {
   return String(email ?? "").trim().toLowerCase();
 }
 
-function getCurrentUser(): AuthUser | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const saved = window.localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!saved) {
-    const fallbackName = window.localStorage.getItem(AUTH_NAME_STORAGE_KEY);
-    return fallbackName
-      ? { fullName: fallbackName, lastName: getLastName(fallbackName), email: "", mobileNumber: "" }
-      : null;
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    if (parsed && typeof parsed.fullName === "string") {
-      return {
-        fullName: parsed.fullName,
-        lastName: parsed.lastName || getLastName(parsed.fullName),
-        email: typeof parsed.email === "string" ? parsed.email : "",
-        mobileNumber: typeof parsed.mobileNumber === "string" ? parsed.mobileNumber : "",
-      };
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function persistCurrentUser(user: AuthUser | null) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (!user) {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
-    window.localStorage.removeItem(AUTH_NAME_STORAGE_KEY);
-    return;
-  }
-
-  const prepared = {
-    fullName: user.fullName,
-    lastName: user.lastName || getLastName(user.fullName),
-    email: user.email,
-    mobileNumber: user.mobileNumber || "",
-  };
-
-  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(prepared));
-  window.localStorage.setItem(AUTH_NAME_STORAGE_KEY, prepared.fullName);
-}
-
-function getRegisteredUsers(): AuthUser[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const saved = window.localStorage.getItem(REGISTERED_USERS_KEY);
-  if (!saved) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    const cleaned: AuthUser[] = [];
-    const seen = new Set<string>();
-
-    for (const entry of parsed) {
-      if (!entry || typeof entry !== "object") {
-        continue;
-      }
-
-      const email = normalizeEmail(String(entry.email ?? ""));
-      const fullName = String(entry.fullName ?? "").trim();
-      if (!email || !fullName || seen.has(email)) {
-        continue;
-      }
-
-      seen.add(email);
-      cleaned.push({
-        fullName,
-        mobileNumber: String(entry.mobileNumber ?? "").trim(),
-        email,
-        lastName: entry.lastName || getLastName(fullName),
-      });
-    }
-
-    if (cleaned.length !== parsed.length) {
-      window.localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(cleaned));
-    }
-
-    return cleaned;
-  } catch {
-    return [];
-  }
-}
-
-function saveRegisteredUsers(users: AuthUser[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const deduped: AuthUser[] = [];
-  const seen = new Set<string>();
-
-  for (const entry of users) {
-    const email = normalizeEmail(entry.email);
-    const fullName = String(entry.fullName ?? "").trim();
-    if (!email || !fullName || seen.has(email)) {
-      continue;
-    }
-
-    seen.add(email);
-    deduped.push({
-      fullName,
-      mobileNumber: String(entry.mobileNumber ?? "").trim(),
-      email,
-      lastName: entry.lastName || getLastName(fullName),
-    });
-  }
-
-  window.localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(deduped));
-}
-
-function AuthModal({
-  isOpen,
-  onClose,
-  onUserChange,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onUserChange: (user: AuthUser | null) => void;
-}) {
+function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState("Please log in or create an account.");
+  const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [registerEmailError, setRegisterEmailError] = useState("");
-
+  const { login, register } = useAuth();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -186,7 +46,7 @@ function AuthModal({
     return null;
   }
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const email = normalizeEmail(loginEmail);
 
@@ -195,20 +55,22 @@ function AuthModal({
       return;
     }
 
-    const user = getRegisteredUsers().find((entry) => normalizeEmail(entry.email) === email);
-    if (!user) {
-      setStatus("No account was found for that email. Please register first.");
-      return;
-    }
+    setLoading(true);
+    setLoginError("");
 
-    persistCurrentUser(user);
-    onUserChange(user);
-    onClose();
-    setLoginEmail("");
-    setStatus("Please log in or create an account.");
+    try {
+      await login(email, loginPassword);
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid email or password.";
+      setStatus("");
+      setLoginError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegister = (event: FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = fullName.trim();
     const phone = mobileNumber.trim();
@@ -226,29 +88,29 @@ function AuthModal({
       return;
     }
 
-    const users = getRegisteredUsers();
-    if (users.some((entry) => normalizeEmail(entry.email) === email)) {
+    if (registerPassword !== confirmPassword) {
       setStatus("");
-      setRegisterEmailError("This email is already registered. Please log in instead.");
+      setRegisterEmailError("Passwords do not match.");
       return;
     }
 
-    const user: AuthUser = {
-      fullName: name,
-      mobileNumber: phone,
-      email,
-      lastName: getLastName(name),
-    };
+    setLoading(true);
 
-    saveRegisteredUsers([...users, user]);
-    setRegisterEmailError("");
-    persistCurrentUser(user);
-    onUserChange(user);
-    onClose();
-    setFullName("");
-    setMobileNumber("");
-    setRegisterEmail("");
-    setStatus("Please log in or create an account.");
+    try {
+      await register(name, phone, email, registerPassword);
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed.";
+      setStatus("");
+      if (message.includes("already exists")) {
+        setRegisterEmailError(message);
+      } else {
+        setRegisterEmailError("");
+        setStatus(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -302,8 +164,25 @@ function AuthModal({
               autoComplete="email"
               required
             />
-            <button className="button" type="submit">
-              Continue
+
+            <label htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              value={loginPassword}
+              onChange={(event) => setLoginPassword(event.target.value)}
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              required
+            />
+
+            <p className="field-error" aria-live="polite">
+              {loginError}
+            </p>
+
+            <button className="button" type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Continue"}
             </button>
           </form>
         ) : (
@@ -349,19 +228,40 @@ function AuthModal({
               required
               aria-invalid={registerEmailError ? "true" : "false"}
             />
+
+            <label htmlFor="register-password">Password</label>
+            <input
+              id="register-password"
+              value={registerPassword}
+              onChange={(event) => setRegisterPassword(event.target.value)}
+              name="password"
+              type="password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              required
+            />
+
+            <label htmlFor="confirm-password">Confirm Password</label>
+            <input
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              name="confirmPassword"
+              type="password"
+              placeholder="Re-enter your password"
+              autoComplete="new-password"
+              required
+            />
+
             <p className="field-error" aria-live="polite">
-              {registerEmailError}
+              {registerEmailError || status}
             </p>
 
-            <button className="button" type="submit">
-              Create account
+            <button className="button" type="submit" disabled={loading}>
+              {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
         )}
-
-        <p className="auth-status" aria-live="polite">
-          {status}
-        </p>
       </div>
     </div>
   );
@@ -372,16 +272,8 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [currentUser, setCurrentUserState] = useState<AuthUser | null>(null);
+  const { user, isAuthenticated, logout } = useAuth();
   const headerRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setCurrentUserState(getCurrentUser());
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -398,7 +290,6 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
 
     return () => mediaQuery.removeEventListener("change", syncViewport);
   }, []);
-
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -434,21 +325,11 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
     };
   }, [authOpen, dropdownOpen, isSmallScreen, mobileMenuOpen]);
 
-  const handleUserChange = (user: AuthUser | null) => {
-    setCurrentUserState(user);
-    setDropdownOpen(false);
-    if (user) {
-      setAuthOpen(false);
-    }
-  };
-
-  const handleLogout = () => {
-    persistCurrentUser(null);
-    setCurrentUserState(null);
+  const handleLogout = async () => {
+    await logout();
     setDropdownOpen(false);
   };
 
-  const buttonLabel = currentUser ? `Welcome ${currentUser.lastName}` : "Log in";
   const panelHidden = isSmallScreen && !mobileMenuOpen;
 
   return (
@@ -498,12 +379,12 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
             <div className="header-auth-menu">
               <button
                 id="header-auth-button"
-                className={`button button-small header-auth ${currentUser ? "is-logged-in" : ""}`}
+                className={`button button-small header-auth ${isAuthenticated ? "is-logged-in" : ""}`}
                 type="button"
                 aria-haspopup="true"
                 aria-expanded={dropdownOpen}
                 onClick={() => {
-                  if (currentUser) {
+                  if (isAuthenticated) {
                     setDropdownOpen((value) => !value);
                     return;
                   }
@@ -511,9 +392,9 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
                   setAuthOpen(true);
                 }}
               >
-                {buttonLabel}
+                {isAuthenticated ? `Welcome ${user?.fullName || "Guest"}` : "Log in"}
               </button>
-              {currentUser ? (
+              {isAuthenticated ? (
                 <div className="header-auth-dropdown" hidden={!dropdownOpen}>
                   <button type="button" onClick={handleLogout}>
                     Logout?
@@ -529,7 +410,7 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
         </div>
       </header>
 
-      <AuthModal key={authOpen ? "auth-open" : "auth-closed"} isOpen={authOpen} onClose={() => setAuthOpen(false)} onUserChange={handleUserChange} />
+      <AuthModal key={authOpen ? "auth-open" : "auth-closed"} isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
