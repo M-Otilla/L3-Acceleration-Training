@@ -143,6 +143,57 @@ refer to: `code planing/step5.md`
 Result:
 The backend-to-frontend bridge is established with the `/api/products` endpoint wired into the menu page, `AuthProvider` properly wrapping all pages via `client-layout.tsx`, and a reusable pattern for server-component data fetching with loading/empty states. The global layout (header navigation, auth context) now works consistently across every page without duplication.
 
-## Entry 5 — YYYY-MM-DD
+## Entry 5 — 2026-09-30
 
-- **Activity:** 
+- **Activity:** Refactored the `/menu` page to pull its category data from MongoDB instead of hardcoded JSX, creating a proper `GET /api/products/menu` endpoint and wiring it through a server-fetched prop pattern. Also added a "← Home" button on the admin dashboard for navigation consistency.
+
+---
+AI model used: Claude Code
+
+Task: Replace the static `menuCategories` export in `src/lib/menu-data.ts` with dynamic MongoDB data served through a new API route (`/api/products/menu`). The route groups products by category using a layout config, formats prices (PHP currency), and maps badge labels to variants. The menu page fetches with a 60-second revalidation, falling back to client-side fetch if the server call fails. Also updated `scripts/seed-products.ts` to inline its own product list since it no longer imports from `menu-data`.
+
+Issues encountered:
+* The original `MenuPageClient` component had `useState("all")` for `activeFilter` removed during refactoring, causing 14 TypeScript errors — all references to `activeFilter` and `setActiveFilter` became undefined. Fixed by restoring the state declaration alongside the new `menuData` prop.
+* `scripts/seed-products.ts` imported `menuCategories` from `menu-data`, which was being removed. Had to inline the product data directly in the seed script, restructuring as `{ item: MenuItem; category: string }[]` pairs so the seeding loop and `mapProduct` helper work without external dependencies.
+* The admin page (`/admin`) had no navigation header — only a bare `AdminProductTable` inside `<div className="admin-products">`. Adding a full `SiteHeader` would introduce the auth modal and mobile menu unnecessarily for an internal tool. Instead, added a lightweight inline "← Home" button using existing `.button` classes for visual consistency without layout noise.
+* The new API route uses `/api/products/menu` as a sub-route under the existing `src/app/api/products/` directory. Need to verify that the existing `route.ts` in `src/app/api/products/` does not conflict — it handles individual product CRUD, while this new route groups by category for display.
+* CSS for the loading indicator (`".menu-loading"`) was added to `Week2/styles.css` (the original design reference) but also needs to be present in the active `globals.css` or Tailwind config if using utility classes instead — confirmed that existing `.preview-note` and `.menu-card` patterns from the static reference carry through without modification.
+
+Takeaway:
+This refactoring shifts the menu page from a purely static component to a hybrid SSR + client-fetch fallback pattern, which is the correct model for Next.js when data lives in an external database. The key design decision was passing fetched data as a prop (`menuData`) to the client component rather than doing all fetching inside it — this avoids flash-of-empty-content and lets the server render immediately if MongoDB responds fast enough. The seed script update showed a common maintenance concern: static data exported from `lib/` files creates coupling; inlining seeds decouples them but risks drift, so future work should add a diff check or migration script to keep MongoDB in sync with source-of-truth data.
+
+Prompt used:
+N/A — this was a direct implementation task using existing project patterns and context.
+
+Result:
+- New file: `src/app/api/products/menu/route.ts` — groups MongoDB products into 4 menu categories (pasta, pizza, antipasti, desserts), formats PHP prices, maps badge labels to variants.
+- Updated: `src/app/menu/page.tsx` — server component fetches from `/api/products/menu` with `next: { revalidate: 60 }`, passes data as prop; gracefully handles missing env vars via relative URL.
+- Updated: `src/components/menu-page-client.tsx` — accepts optional `menuData` prop, initializes with it if present, client-fetches on mount only when not provided. Added loading state UI.
+- Trimmed: `src/lib/menu-data.ts` — removed hardcoded `menuCategories`, kept `MenuBadge`, `MenuItem`, `MenuCategory` types and `homeTeasers`.
+- Updated: `scripts/seed-products.ts` — inlined product data as `{ item, category }[]` pairs instead of importing from `menu-data`.
+- Added CSS: `.menu-loading` style to `Week2/styles.css`.
+- Admin page: added "← Home" button above the product table.
+
+## Discussion: What Was Refactored
+
+### 1. Data Source — Hardcoded JS → MongoDB
+The single biggest change: `menuCategories` was a static array exported from `src/lib/menu-data.ts`, hardcoded as JSX in the menu component's initial render. It is now replaced by data fetched from MongoDB through a dedicated API route. This means menu updates happen in the database (via the admin panel) rather than editing source code.
+
+The architecture pattern used is **Server Component Data Fetch with Client Fallback**:
+- The server page (`/menu/page.tsx`) fetches on mount with `next: { revalidate: 60 }` cache for ~1 second during build/dev, then 60 seconds in production.
+- If the fetch succeeds, data is passed as a prop to the client component — zero flash of empty state.
+- If the fetch fails (database down, network error), the client component falls back to its own `useEffect` fetch. This dual-layer pattern ensures the page never renders blank.
+
+### 2. API Route Structure — `/api/products/menu`
+Created a new GET endpoint that mirrors the menu layout structure: it uses a `MENU_LAYOUT` config array matching the original hardcoded categories (pasta → 01, pizza → 02, antipasti → 03, desserts → 04), then filters and formats MongoDB products into `MenuCategory[]`. Badge labels are mapped back to variants (`"Chef's Special"` → `special`, `"Spicy"` → `spicy`, etc.) so the UI rendering layer remains unchanged.
+
+This route does not conflict with the existing `/api/products` (CRUD for individual products) — it occupies its own sub-route, following Next.js directory conventions where each `route.ts` handles its own HTTP methods.
+
+### 3. Seed Script Decoupling
+The seed script previously imported `menuCategories` from `menu-data`. Removing that export broke the import. The fix was inlining the product data directly in the seed script as `{ item: MenuItem; category: string }[]`. This is a **trade-off**: it decouples the seed from the app's source-of-truth, but it means the seed file is now the sole copy of product data outside MongoDB — risk of drift. A future improvement would be to generate the seed data from a canonical source (e.g., a JSON file or CSV) that both the seed and any static fallback share.
+
+### 4. Admin Navigation — Inline Button
+The admin dashboard had no way to navigate away from it except the browser back button. Adding the full `SiteHeader` would pull in auth modals, mobile menu toggles, and header state management — unnecessary for an internal tool. Instead, a simple `<Link href="/" className="button button-small">← Home</Link>` was placed above the product table, matching existing button classes and colors without introducing new CSS.
+
+### 5. Component Prop Pattern Change
+`MenuPageClient` changed from `export function MenuPageClient()` (no props) to `export function MenuPageClient({ menuData }: { menuData?: MenuCategory[] })`. This is a minimal interface — the component renders identically whether data comes from server or client fetch, just with different initialization timing. The `activeFilter` state variable was accidentally dropped during the prop addition (TypeScript caught it at 14 errors) and restored immediately. 
