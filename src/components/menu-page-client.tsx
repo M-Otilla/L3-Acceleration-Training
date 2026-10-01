@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import AdminProductTable from "@/components/admin-product-table";
 import { useAuth } from "@/contexts/AuthContext";
-import { menuCategories } from "@/lib/menu-data";
+import type { MenuCategory } from "@/lib/menu-data";
 
 const CURRENT_USER_NAME_KEY = "la-tavola-current-user-name";
 const FAVORITES_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -113,7 +113,43 @@ const filterOptions = [
   { id: "desserts", label: "Desserts" },
 ] as const;
 
-export function MenuPageClient() {
+interface MenuPageClientProps {
+  menuData?: MenuCategory[];
+}
+
+export function MenuPageClient({ menuData: initialMenu }: MenuPageClientProps) {
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(() => {
+    if (initialMenu) return initialMenu;
+    // Seed with a minimal array so the component renders before fetch completes
+    return [];
+  });
+  const [loading, setLoading] = useState(!initialMenu);
+
+  useEffect(() => {
+    if (initialMenu) return;
+
+    let cancelled = false;
+
+    async function fetchMenu() {
+      try {
+        const res = await fetch("/api/products/menu");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.categories)) {
+          setMenuCategories(data.categories);
+        }
+      } catch {
+        // Silently fall back to empty categories on fetch failure
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchMenu();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialMenu]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set<string>());
   const [favoritesStatus, setFavoritesStatus] = useState(
@@ -393,6 +429,10 @@ export function MenuPageClient() {
       <p className="preview-note">
         <strong>A taste of what&apos;s to come.</strong> This is a sample menu. All dishes, prices in PHP, and badges are placeholders pending confirmation.
       </p>
+
+      {loading ? (
+        <p className="menu-loading">Loading menu...</p>
+      ) : null}
 
       {visibleCategories.map((category) => (
         <section key={category.id} id={category.id} className="menu-category" aria-labelledby={`${category.id}-heading`}>

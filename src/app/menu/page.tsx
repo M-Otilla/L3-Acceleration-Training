@@ -1,4 +1,4 @@
-﻿import { MenuPageClient } from "@/components/menu-page-client";
+import { MenuPageClient } from "@/components/menu-page-client";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -7,7 +7,22 @@ export const metadata = {
   description: "Explore the La Tavola Italiana menu of authentic pasta, pizza, antipasti, salads, and desserts.",
 };
 
-export default function MenuPage() {
+async function getMenuCategories() {
+  try {
+    const res = await fetch("/api/products/menu", {
+      next: { revalidate: 60 }, // revalidate every 60 seconds
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data.categories) ? data.categories : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function MenuPage() {
+  const menuData = (await getMenuCategories()) ?? undefined;
+
   return (
     <>
       <SiteHeader currentPage="menu" />
@@ -30,7 +45,7 @@ export default function MenuPage() {
           </div>
         </section>
 
-        <MenuPageClient />
+        <MenuPageClient menuData={menuData} />
       </main>
 
       <SiteFooter />

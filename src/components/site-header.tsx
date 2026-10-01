@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 type HeaderPage = "home" | "menu";
 
@@ -272,7 +273,7 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -396,8 +397,13 @@ export function SiteHeader({ currentPage }: { currentPage: HeaderPage }) {
               </button>
               {isAuthenticated ? (
                 <div className="header-auth-dropdown" hidden={!dropdownOpen}>
+                  {isAdmin ? (
+                    <Link href="/admin" onClick={() => setDropdownOpen(false)}>
+                      Admin Dashboard
+                    </Link>
+                  ) : null}
                   <button type="button" onClick={handleLogout}>
-                    Logout?
+                    Logout
                   </button>
                 </div>
               ) : null}

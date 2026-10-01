@@ -799,6 +799,13 @@ html {
   padding-block: 0.75rem;
 }
 
+.menu-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 .menu-category {
   padding-block: 2.25rem 1rem;
 }

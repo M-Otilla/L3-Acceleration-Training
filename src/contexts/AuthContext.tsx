@@ -77,14 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         saveToStorage(session);
       } else {
-        // Cookie expired or invalid — clear stale storage.
-        saveToStorage(null);
-        setUser(null);
+        // Server responded with no session — could be expired cookie or server error.
+        // If we have a cached user, keep it (better to show stale session briefly than
+        // force logout on transient server issues like MongoDB being unreachable).
+        // If nothing was cached, this is likely first visit or already logged out.
       }
       setLoading(false);
     }).catch(() => {
       if (!mounted) return;
-      // Network error — keep whatever was in storage, don't flash logged out.
+      // Network error (CORS, DNS failure, etc.) — keep cached user.
       setLoading(false);
     });
 
