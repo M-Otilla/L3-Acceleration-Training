@@ -8,7 +8,7 @@ Copy this file into your Google Drive folder and fill in one entry per day. Five
 - https://github.com/M-Otilla/L3-Acceleration-Training
 ### Branches: 
 * Oneshot (Published)
-* Multi-turn (WIP)
+* Multi-turn (Published)
 
 ---
 
@@ -98,7 +98,7 @@ The multi-turn approach was successful in creating a stable root project scaffol
 - **Activity:** Created database and backend environment, including full authentication infrastructure for the La Tavola restaurant website. The work focused on implementing MongoDB user model, auth API routes (login, register, logout, session), Next.js App Router cookie-based session management, and a client-side AuthContext provider that persists user state across page reloads. The session also covered fixing a critical bug where the missing `AuthProvider` in the root layout caused all auth hooks to fall back to no-op defaults, and resolving an httpOnly cookie persistence issue by adding `credentials: "include"` to every fetch call.
 
 ---
-AI model used: Claude Code
+AI model used: Ollama Claude Code
 
 Task: Build the backend database layer (MongoDB user model with Mongoose schema) and the authentication API routes (login, register, logout, session check), then wire them up through a client-side AuthContext provider so that the login state persists across page loads and the site header dynamically shows either "Log in" or "Welcome {fullName}".
 
@@ -123,7 +123,7 @@ The backend was fully implemented with all four auth endpoints (`/api/auth/login
 - **Activity:** Implementation of the backend APIs to the frontend, connecting API endpoints to their corresponding pages and components so data flows from MongoDB through Next.js App Router routes into the UI. The work focused on wiring up the products API to the menu page, setting up a reusable fetch pattern with proper error handling for all public-facing pages (Home, Menu, Visit, About), and creating shared layout structure that avoids duplicating `AuthProvider`, `SiteHeader`, and navigation across every page.
 
 ---
-AI model used: Claude Code
+AI model used: Ollama Claude Code
 
 Task: Bridge the gap between backend API routes and frontend pages — connect `/api/products` to the menu page, replace all hardcoded/static content with data fetched from MongoDB through Next.js server components, establish a consistent error-handling pattern for failed fetches (server-side fallback + client-side retry), and ensure the global layout (`AuthProvider`, `SiteHeader`) wraps every page without duplication.
 
@@ -148,7 +148,7 @@ The backend-to-frontend bridge is established with the `/api/products` endpoint 
 - **Activity:** Refactored the `/menu` page to pull its category data from MongoDB instead of hardcoded JSX, creating a proper `GET /api/products/menu` endpoint and wiring it through a server-fetched prop pattern. Also added a "← Home" button on the admin dashboard for navigation consistency.
 
 ---
-AI model used: Claude Code
+AI model used: Ollama Claude Code
 
 Task: Replace the static `menuCategories` export in `src/lib/menu-data.ts` with dynamic MongoDB data served through a new API route (`/api/products/menu`). The route groups products by category using a layout config, formats prices (PHP currency), and maps badge labels to variants. The menu page fetches with a 60-second revalidation, falling back to client-side fetch if the server call fails. Also updated `scripts/seed-products.ts` to inline its own product list since it no longer imports from `menu-data`.
 

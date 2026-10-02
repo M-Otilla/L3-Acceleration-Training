@@ -248,21 +248,25 @@ export function validateProductInput(payload: unknown, partial = false) {
   }
 
   if (!partial || typeof description !== "undefined") {
-    if (typeof description !== "string") {
+    if (typeof description === "string") {
+      nextPayload.description = description.trim();
+    } else if (!partial) {
+      nextPayload.description = "";
+    } else {
       throw new Error("description must be a string.");
     }
-
-    nextPayload.description = description.trim();
   }
 
   if (!partial || typeof badges !== "undefined") {
-    if (!Array.isArray(badges)) {
+    if (Array.isArray(badges)) {
+      nextPayload.badges = badges
+        .map((badge) => (typeof badge === "string" ? badge.trim() : ""))
+        .filter((badge) => badge.length > 0);
+    } else if (!partial) {
+      nextPayload.badges = [];
+    } else {
       throw new Error("badges must be an array of strings.");
     }
-
-    nextPayload.badges = badges
-      .map((badge) => (typeof badge === "string" ? badge.trim() : ""))
-      .filter((badge) => badge.length > 0);
   }
 
   if (Object.keys(nextPayload).length === 0) {
