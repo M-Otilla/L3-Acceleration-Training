@@ -1,0 +1,68 @@
+{
+  "test_cases": [
+    {
+      "id": "refactor_js_1",
+      "command": "refactor",
+      "input": {
+        "code": "const numbers = [1, 2, 3, 4, 5];\nlet sum = 0;\nfor (let i = 0; i < numbers.length; i++) {\n  sum = sum + numbers[i];\n}\nconsole.log(sum);",
+        "language": "javascript",
+        "goal": "improve readability"
+      },
+      "expected_output": "Should return refactored code using reduce() and 3 bullets explaining changes"
+    },
+    {
+      "id": "refactor_python_1",
+      "command": "refactor",
+      "input": {
+        "code": "def check_even(num):\n    if num % 2 == 0:\n        return True\n    else:\n        return False",
+        "language": "python",
+        "goal": "reduce lines of code"
+      },
+      "expected_output": "Should return simplified code and 3 bullets explaining changes"
+    },
+    {
+      "id": "test_js_1",
+      "command": "test",
+      "input": {
+        "code": "function validateEmail(email) {\n  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return re.test(email);\n}",
+        "language": "javascript",
+        "framework": "jest",
+        "coverage": "happy path, boundary conditions, error states"
+      },
+      "expected_output": "Should return Jest test code with mocked dependencies and descriptive test names"
+    },
+    {
+      "id": "test_python_1",
+      "command": "test",
+      "input": {
+        "code": "def calculate_discount(price, discount_percent):\n    if discount_percent < 0 or discount_percent > 100:\n        raise ValueError('Invalid discount')\n    return price * (1 - discount_percent / 100)",
+        "language": "python",
+        "framework": "pytest",
+        "coverage": "happy path, boundary conditions, error states"
+      },
+      "expected_output": "Should return pytest test code with mocked dependencies and descriptive test names"
+    },
+    {
+      "id": "debug_js_1",
+      "command": "debug",
+      "input": {
+        "code": "const data = JSON.parse(userInput);\nconsole.log(data.name);",
+        "error": "SyntaxError: Unexpected token in JSON at position 0",
+        "language": "javascript",
+        "environment": "Node.js 18"
+      },
+      "expected_output": "Should return root cause, step-by-step fix, and corrected code"
+    },
+    {
+      "id": "debug_python_1",
+      "command": "debug",
+      "input": {
+        "code": "def fetch_user(user_id):\n    users = {'1': 'Alice', '2': 'Bob'}\n    return users[user_id]",
+        "error": "KeyError: '3'",
+        "language": "python",
+        "environment": "Python 3.9"
+      },
+      "expected_output": "Should return root cause, step-by-step fix, and corrected code"
+    }
+  ]
+}
